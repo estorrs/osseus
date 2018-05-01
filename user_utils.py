@@ -43,6 +43,12 @@ def add_user_dynamodb(email, pw_hash, table, **kwargs):
             Item=payload
             )
 
+def delete_user_dynamodb(email, table):
+    response = table.delete_item(
+            Key={
+                'email': email
+                }
+            )
 
 def check_password(password_hash, password_to_check, bcrypt):
     '''check password hash for user against user given password'''
