@@ -1,7 +1,7 @@
 version: '3'
 services:
   server:
-    image: server:latest
+    image: osseus:latest
     env_file: server_envvars.env
     ports:
     - "8080:8080"

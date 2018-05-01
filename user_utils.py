@@ -28,10 +28,12 @@ def get_user_from_dynamodb(user_email, table):
 
 def add_user_dynamodb(email, pw_hash, table, **kwargs):
     '''add user to dynamo db table'''
+    print(kwargs)
     payload = {
             'email': email,
             'password': pw_hash,
-            }.update(kwargs)
+            }
+    payload.update(kwargs)
 
     # there's probably a more efficient way to do this
     payload = json.dumps(payload)

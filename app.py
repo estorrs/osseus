@@ -85,23 +85,27 @@ def unauthorized_handler():
 
 @app.route('/', methods=['GET'])
 def home():
-    flask.render_template('index.html')
+    return flask.render_template('index.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     user = flask_login.current_user
     if user.is_authenticated:
+        logging.info('user already detected.  redirecting to super secret')
         return flask.redirect(flask.url_for('super_secret'))
 
     if flask.request.method == 'GET':
+        logging.info('Sending login page')
         return flask.render_template('login.html')
 
     email = flask.request.form['email']
     password = flask.request.form['password']
 
+    logging.info('login attempt by {}'.format(email))
+
     user_dict = user_utils.get_user_from_dynamodb(email, USER_TABLE)
     if user_dict is None:
-        return flask.Response('invalid email/password', 401)
+        return flask.Response('invalid email/password', 400)
 
     is_valid = user_utils.check_password(user_dict['password'], password, bcrypt)
     if is_valid:
@@ -116,10 +120,13 @@ def login():
 @app.route('/user', methods=['GET', 'POST'])
 def create_user():
     if flask.request.method == 'GET':
+        logging.info('sending create user page')
         return flask.render_template('create_user.html')
 
     email = flask.request.form['email']
     password = flask.request.form['password']
+
+    logging.info('attempting create user for {}'.format(email))
 
     user_dict = user_utils.get_user_from_dynamodb(email, USER_TABLE)
     if user_dict is not None:
@@ -130,6 +137,7 @@ def create_user():
             }
 
     pw_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+    logging.info('{} {}'.format(email, pw_hash))
     user_utils.add_user_dynamodb(email, pw_hash, USER_TABLE, **kwargs)
 
     return flask.Response('user {} added'.format(email), 200)
@@ -138,7 +146,7 @@ def create_user():
 @app.route('/super-secret', methods=['GET'])
 @flask_login.login_required
 def super_secret():
-    flask.render_template('super_secret.html')
+    return flask.render_template('super_secret.html')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)
