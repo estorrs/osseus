@@ -5,7 +5,6 @@ from boto3.dynamodb.conditions import Key, Attr
 from flask_wtf.csrf import CSRFProtect
 from flask_bcrypt import Bcrypt
 from itsdangerous import URLSafeSerializer, BadSignature
-
 import boto3
 import flask
 import flask_login
@@ -112,7 +111,29 @@ def login():
         flask_login.login_user(user)
         return flask.redirect(flask.url_for('super_secret'))
 
-    return flask.Response('invalid email/password', 401)
+    return flask.Response('invalid email/password', 400)
+
+@app.route('/user', methods=['GET', 'POST'])
+def create_user():
+    if flask.request.method == 'GET':
+        return flask.render_template('create_user.html')
+
+    email = flask.request.form['email']
+    password = flask.request.form['password']
+
+    user_dict = user_utils.get_user_from_dynamodb(email, USER_TABLE)
+    if user_dict is not None:
+        return flask.Response('Account with the email {} already exists :('.format(email), 400)
+
+    kwargs = {
+            'cool_number': 1.11111 # to make sure decoder is working
+            }
+
+    pw_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+    user_utils.add_user_dynamodb(email, pw_hash, USER_TABLE, **kwargs)
+
+    return flask.Response('user {} added'.format(email), 200)
+
 
 @app.route('/super-secret', methods=['GET'])
 @flask_login.login_required

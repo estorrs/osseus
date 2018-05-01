@@ -1,3 +1,4 @@
+import decimal
 import json
 
 from boto3.dynamodb.conditions import Key, Attr
@@ -24,6 +25,22 @@ def get_user_from_dynamodb(user_email, table):
     encoded_user_info = json.dumps(user_info, cls=DynamodbEncoder)
 
     return json.loads(encoded_user_info)
+
+def add_user_dynamodb(email, pw_hash, table, **kwargs):
+    '''add user to dynamo db table'''
+    payload = {
+            'email': email,
+            'password': pw_hash,
+            }.update(kwargs)
+
+    # there's probably a more efficient way to do this
+    payload = json.dumps(payload)
+    payload = json.loads(payload, parse_float=decimal.Decimal)
+
+    response = table.put_item(
+            Item=payload
+            )
+
 
 def check_password(password_hash, password_to_check, bcrypt):
     '''check password hash for user against user given password'''
