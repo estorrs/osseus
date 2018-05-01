@@ -1,3 +1,4 @@
+from functools import wraps
 import logging
 import os
 
@@ -37,6 +38,9 @@ bcrypt = Bcrypt(app)
 
 # initialize url serializer
 url_serializer = URLSafeSerializer(app.secret_key)
+
+# x-api-key
+X_API_KEY = os.getenv('X_API_KEY')
 
 
 ###################################
@@ -79,6 +83,25 @@ def unauthorized_handler():
     return flask.Response('Unauthorized', 401)
 
 
+##############################
+### authorization for apis ###
+##############################
+
+def check_auth(x_api_key):
+    '''x-api-key'''
+    if X_API_KEY == x_api_key:
+        return True
+    return False
+
+def authorize(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not check_auth(flask.request.headers.get('x-api-key')):
+            return flask.Response('invalid x-api-key', 401)
+        return f(*args, **kwargs)
+    return decorated
+
+
 ##############
 ### Routes ###
 ##############
@@ -117,6 +140,13 @@ def login():
 
     return flask.Response('invalid email/password', 400)
 
+@app.route('/logout', methods=['GET'])
+def logout():
+    logging.info('logging out {}'.format(flask_login.current_user.id))
+    flask_login.logout_user()
+
+    return flask.redirect(flask.url_for('login'))
+
 @app.route('/user', methods=['GET', 'POST'])
 def create_user():
     if flask.request.method == 'GET':
@@ -146,7 +176,22 @@ def create_user():
 @app.route('/super-secret', methods=['GET'])
 @flask_login.login_required
 def super_secret():
+    logging.info('rendering super secret portal to {}'.format(flask_login.current_user.id))
     return flask.render_template('super_secret.html')
+
+
+#######################
+### delete user api ###
+#######################
+
+@app.route('/user/<email>', methods=['DELETE'])
+@authorize
+@csrf.exempt
+def delete_user(email):
+    logging.info('deleting {}'.format(email))
+    user_utils.delete_user_dynamodb(email, USER_TABLE)
+
+    return flask.Response('user {} deleted'.format(email), 200)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)
