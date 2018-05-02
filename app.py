@@ -3,13 +3,15 @@ import logging
 import os
 
 from boto3.dynamodb.conditions import Key, Attr
-from flask_wtf.csrf import CSRFProtect
 from flask_bcrypt import Bcrypt
-from itsdangerous import URLSafeSerializer, BadSignature
+from flask_mail import Mail
+from flask_wtf.csrf import CSRFProtect
+from itsdangerous import URLSafeTimedSerializer, BadSignature
 import boto3
 import flask
 import flask_login
 
+import email_utils
 import user_utils
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s', level=logging.INFO)
@@ -25,6 +27,22 @@ app = flask.Flask(__name__)
 # grab secret key
 app.secret_key = os.getenv('FLASK_SECRET_KEY')
 
+## various configuration settings
+# no time limit for csrf tokens
+app.config.update(dict(
+    WTF_CSRF_TIME_LIMIT=None
+))
+
+# email stuff
+app.config.update(dict(
+    MAIL_SERVER='smtp.gmail.com',
+    MAIL_PORT=465,
+    MAIL_USE_TLS=False,
+    MAIL_USE_SSL=True,
+    MAIL_USERNAME=os.getenv('MAIL_USERNAME'),
+    MAIL_PASSWORD=os.getenv('MAIL_PASSWORD')
+))
+
 # enable csrf
 csrf = CSRFProtect()
 csrf.init_app(app)
@@ -37,7 +55,10 @@ login_manager.init_app(app)
 bcrypt = Bcrypt(app)
 
 # initialize url serializer
-url_serializer = URLSafeSerializer(app.secret_key)
+url_serializer = URLSafeTimedSerializer(app.secret_key)
+
+# initialize mail
+mail = Mail(app)
 
 # x-api-key
 X_API_KEY = os.getenv('X_API_KEY')
@@ -147,30 +168,57 @@ def logout():
 
     return flask.redirect(flask.url_for('login'))
 
-@app.route('/user', methods=['GET', 'POST'])
-def create_user():
-    if flask.request.method == 'GET':
-        logging.info('sending create user page')
-        return flask.render_template('create_user.html')
-
-    email = flask.request.form['email']
-    password = flask.request.form['password']
-
-    logging.info('attempting create user for {}'.format(email))
+@app.route('/user/<token>', methods=['GET', 'POST'])
+def confirm_user(token):
+    try:
+        email = url_serializer.loads(token, max_age=86400)
+    except BadSignature:
+        return flask.Response('invalid user token', 404)
 
     user_dict = user_utils.get_user_from_dynamodb(email, USER_TABLE)
-    if user_dict is not None:
-        return flask.Response('Account with the email {} already exists :('.format(email), 400)
+
+    if user_dict is None:
+        return flask.Response('invalid token, email not found', 400)
+
+    if flask.request.method == 'GET':
+        logging.info('sending confirm user page to {}'.format(email))
+        return flask.render_template('confirm_user.html', email=email)
+
+    password = flask.request.form['password']
+
+    logging.info('attempting confirm user {}'.format(email))
 
     kwargs = {
             'cool_number': 1.11111 # to make sure decoder is working
             }
 
     pw_hash = bcrypt.generate_password_hash(password).decode('utf-8')
-    logging.info('{} {}'.format(email, pw_hash))
-    user_utils.add_user_dynamodb(email, pw_hash, USER_TABLE, **kwargs)
+    user_utils.update_user_dynamodb(email, pw_hash, USER_TABLE, **kwargs)
 
     return flask.Response('user {} added'.format(email), 200)
+
+
+@app.route('/user', methods=['GET', 'POST'])
+def create_user():
+    if flask.request.method == 'GET':
+        logging.info('create user account setup page sent')
+        return flask.render_template('create_user.html')
+
+    email = flask.request.form['email']
+
+    user_dict = user_utils.get_user_from_dynamodb(email, USER_TABLE)
+    if user_dict is not None:
+        return flask.Response('Account with the email {} already exists :('.format(email), 400)
+
+    user_utils.add_user_dynamodb(email, USER_TABLE)
+
+    serialized = url_serializer.dumps(email)
+    url = flask.request.url_root + 'user/' + serialized
+
+    email_utils.send_confirmation_message(email, url, app, mail)
+
+    message = 'A confirmation email has been sent.\n\nPlease open it to create your account'
+    return flask.Response(message, 200)
 
 
 @app.route('/super-secret', methods=['GET'])

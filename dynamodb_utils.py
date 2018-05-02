@@ -1,5 +1,6 @@
 import decimal
 import json
+import uuid
 
 class DynamodbEncoder(json.JSONEncoder):
     def default(self, obj):
