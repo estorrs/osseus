@@ -26,22 +26,34 @@ def get_user_from_dynamodb(user_email, table):
 
     return json.loads(encoded_user_info)
 
-def add_user_dynamodb(email, pw_hash, table, **kwargs):
+def add_user_dynamodb(email, table):
     '''add user to dynamo db table'''
-    print(kwargs)
     payload = {
             'email': email,
-            'password': pw_hash,
             }
-    payload.update(kwargs)
-
-    # there's probably a more efficient way to do this
-    payload = json.dumps(payload)
-    payload = json.loads(payload, parse_float=decimal.Decimal)
 
     response = table.put_item(
             Item=payload
             )
+
+def update_user_dynamodb(email, pw_hash, table, **kwargs):
+    '''add user to dynamo db table'''
+
+    # there's probably a more efficient way to do this, but want to test the decimal decoder
+    payload = json.dumps(kwargs)
+    payload = json.loads(payload, parse_float=decimal.Decimal)
+
+    response = table.update_item(
+            Key={
+                'email': email,
+            },
+            UpdateExpression="set password = :pwd, cool_number = :cn",
+            ExpressionAttributeValues={
+                ':pwd': pw_hash,
+                ':cn': payload['cool_number']
+            },
+            ReturnValues="UPDATED_NEW"
+        )
 
 def delete_user_dynamodb(email, table):
     response = table.delete_item(
