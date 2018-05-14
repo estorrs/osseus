@@ -2,11 +2,11 @@ version: '3'
 services:
   sut:
     image: osseus:latest
-    env_file: server_envvars.env
+    env_file: .env
     command: ["pytest", "tests/test_server.py"]
 
   server:
     image: osseus:latest
-    env_file: server_envvars.env
+    env_file: .env
     ports:
       - "8080:8080"
