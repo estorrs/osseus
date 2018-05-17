@@ -1,0 +1,12 @@
+{
+  "AWSEBDockerrunVersion": "2",
+  "Image": {
+    "Name": "925617864758.dkr.ecr.us-east-1.amazonaws.com/osseus:abd7fdb6d0df0e923d3ba7f33329240f081ba904",
+    "Update": "true"
+  },
+  "Ports": [
+    {
+      "ContainerPort": "8080"
+    }
+  ]
+}
