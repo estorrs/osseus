@@ -3,12 +3,6 @@ services:
   app:
     image: osseus:latest
     env_file: .env
-    expose:
-      - 8080
-  nginx:
-    image: osseus-proxy:latest
     ports:
-    - "80:80"
-    depends_on:
-      - app
+      - "8080:8080"
     tty: true
