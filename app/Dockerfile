@@ -8,4 +8,4 @@ WORKDIR /app
 
 EXPOSE 8080
 
-CMD gunicorn -c gunicorn_config.py app:app
+CMD gunicorn -c gunicorn_config.py --certfile=ssl/server.crt --keyfile=ssl/server.key --bind 0.0.0.0:8080 app:app

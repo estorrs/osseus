@@ -3,14 +3,24 @@ import imaplib
 import os
 import re
 import time
+import urllib3
 
 import pytest
 import requests
+
+# disable insecure request warning
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 URL = os.getenv('WEBAPP_URL')
 X_API_KEY = os.getenv('X_API_KEY')
 
 SESSION = requests.Session()
+
+verify_certificate = os.getenv('VERIFY_CERTIFICATE')
+if verify_certificate == 'true':
+    SESSION.verify = True
+else:
+    SESSION.verify = False
 
 TEST_EMAIL = os.getenv('TEST_MAIL_USERNAME')
 TEST_PASSWORD = os.getenv('TEST_MAIL_PASSWORD')
@@ -77,7 +87,7 @@ def test_create_user():
             'email': TEST_EMAIL,
             }
 
-    r = SESSION.post(url, data=payload)
+    r = SESSION.post(url, data=payload, headers={'Referer': r.request.url})
 
     assert r.status_code == 200
 
@@ -96,7 +106,7 @@ def test_fail_to_create_user_with_same_email():
             'email': TEST_EMAIL,
             }
 
-    r = SESSION.post(url, data=payload)
+    r = SESSION.post(url, data=payload, headers={'Referer': r.request.url})
 
     assert r.status_code == 400
 
@@ -124,7 +134,7 @@ def test_confirm_user():
             'password': TEST_PASSWORD,
             }
 
-    r = SESSION.post(url, data=payload)
+    r = SESSION.post(url, data=payload, headers={'Referer': r.request.url})
 
     assert r.status_code == 200
 
@@ -144,7 +154,7 @@ def test_login_user():
             'password': TEST_PASSWORD,
             }
 
-    r = SESSION.post(url, data=payload)
+    r = SESSION.post(url, data=payload, headers={'Referer': r.request.url})
 
     assert r.status_code == 200
 
@@ -166,13 +176,14 @@ def test_logout():
 def test_unauthorized_delete_user():
     url = URL + '/user/' + TEST_EMAIL
 
-    r = requests.delete(url)
+    r = requests.delete(url, verify=False)
 
     assert r.status_code == 401
 
 def test_delete_user():
     url = URL + '/user/' + TEST_EMAIL
 
-    r = requests.delete(url, headers={'x-api-key': X_API_KEY})
+    r = requests.delete(url, verify=False,
+            headers={'x-api-key': X_API_KEY})
 
     assert r.status_code == 200
