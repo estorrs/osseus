@@ -3,7 +3,7 @@ $(aws ecr get-login --no-include-email --region us-east-1)
 
 # build
 echo building osseus
-docker build -f app/Dockerfile -t osseus .
+docker build -f app/Dockerfile -t osseus app/
 
 #tag
 TAG=$(git log --format="%H" -n 1)
