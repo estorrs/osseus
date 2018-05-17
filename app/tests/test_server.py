@@ -15,7 +15,12 @@ URL = os.getenv('WEBAPP_URL')
 X_API_KEY = os.getenv('X_API_KEY')
 
 SESSION = requests.Session()
-SESSION.verify = False
+
+verify_certificate = os.getenv('VERIFY_CERTIFICATE')
+if verify_certificate == 'true':
+    SESSION.verify = True
+else:
+    SESSION.verify = False
 
 TEST_EMAIL = os.getenv('TEST_MAIL_USERNAME')
 TEST_PASSWORD = os.getenv('TEST_MAIL_PASSWORD')
