@@ -6,6 +6,8 @@ RUN pip3 install -r /app/requirements.txt
 COPY . /app
 WORKDIR /app
 
-EXPOSE 8080
+EXPOSE 80
 
-CMD gunicorn -c gunicorn_config.py --certfile=ssl/server.crt --keyfile=ssl/server.key --bind 0.0.0.0:8080 app:app
+# CMD gunicorn -c gunicorn_config.py --certfile=ssl/server.crt --keyfile=ssl/server.key --bind 0.0.0.0:8080 app:app
+CMD gunicorn -c gunicorn_config.py app:app
+

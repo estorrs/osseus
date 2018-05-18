@@ -2,7 +2,7 @@ version: '3'
 services:
   app:
     image: osseus:latest
-    env_file: .env
+    env_file: env/.env
     ports:
-      - "8080:8080"
+      - "80:80"
     tty: true
