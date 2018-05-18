@@ -1,0 +1,6 @@
+version: '3'
+services:
+  sut:
+    image: osseus:latest
+    env_file: env/deployment_test.env
+    command: ["bash", "tests/test.sh"]
