@@ -4,5 +4,5 @@ services:
     image: osseus:latest
     env_file: env/.env
     ports:
-      - "443:443"
+      - "8080:8080"
     tty: true
