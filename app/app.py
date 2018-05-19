@@ -7,6 +7,7 @@ from flask_bcrypt import Bcrypt
 from flask_mail import Mail
 from flask_wtf.csrf import CSRFProtect
 from itsdangerous import URLSafeTimedSerializer, BadSignature
+
 import boto3
 import flask
 import flask_login
