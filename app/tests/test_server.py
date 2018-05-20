@@ -139,6 +139,8 @@ def test_confirm_user():
     assert r.status_code == 200
 
 def test_login_user():
+    time.sleep(1)
+
     url = URL + '/login'
 
     r = SESSION.get(url)
@@ -154,7 +156,7 @@ def test_login_user():
             'password': TEST_PASSWORD,
             }
 
-    r = SESSION.post(url, data=payload, headers={'Referer': r.request.url})
+    r = SESSION.post(r.request.url, data=payload, headers={'Referer': r.request.url})
 
     assert r.status_code == 200
 
