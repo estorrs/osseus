@@ -7,6 +7,7 @@ from flask_bcrypt import Bcrypt
 from flask_mail import Mail
 from flask_wtf.csrf import CSRFProtect
 from itsdangerous import URLSafeTimedSerializer, BadSignature
+
 import boto3
 import flask
 import flask_login
@@ -242,4 +243,4 @@ def delete_user(email):
     return flask.Response('user {} deleted'.format(email), 200)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080)
+    app.run(host='0.0.0.0', port=80)
