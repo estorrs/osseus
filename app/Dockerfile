@@ -6,7 +6,7 @@ RUN pip3 install -r /app/requirements.txt
 COPY . /app
 WORKDIR /app
 
-EXPOSE 443
+EXPOSE 80
 
 CMD gunicorn -c gunicorn_config.py app:app
 
