@@ -92,6 +92,9 @@ def test_create_user():
     assert r.status_code == 200
 
 def test_fail_to_create_user_with_same_email():
+    # give time for user to be created
+    time.sleep(5)
+
     url = URL + '/user'
 
     r = SESSION.get(url)
@@ -110,7 +113,6 @@ def test_fail_to_create_user_with_same_email():
 
     assert r.status_code == 400
 
-    time.sleep(10)
 
 def test_confirm_user_fake_token_failure():
     url = URL + '/user/12345'
@@ -120,6 +122,9 @@ def test_confirm_user_fake_token_failure():
     assert r.status_code != 200
 
 def test_confirm_user():
+    # give time for email to be sent
+    time.sleep(5)
+
     url = get_link()
 
     r = SESSION.get(url)
@@ -134,12 +139,13 @@ def test_confirm_user():
             'password': TEST_PASSWORD,
             }
 
-    r = SESSION.post(url, data=payload, headers={'Referer': r.request.url})
+    r = SESSION.post(r.request.url, data=payload, headers={'Referer': r.request.url})
 
     assert r.status_code == 200
 
 def test_login_user():
-    time.sleep(1)
+    # give time for account to be created
+    time.sleep(5)
 
     url = URL + '/login'
 
@@ -156,7 +162,7 @@ def test_login_user():
             'password': TEST_PASSWORD,
             }
 
-    r = SESSION.post(r.request.url, data=payload, headers={'Referer': r.request.url})
+    r = SESSION.post(url, data=payload, headers={'Referer': r.request.url})
 
     assert r.status_code == 200
 
